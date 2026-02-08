@@ -1,0 +1,259 @@
+version(2);
+project_name = "go-template: multi-cmd (standardized)"
+
+/*
+Template goal:
+- Single Go module repo with multiple binaries under ./cmd/*
+- Standardized command set across templates:
+  build, run, test, fmt, lint, vet, gitstatus, gitblame, gitdiffmain, rgsearch, rgvendor
+
+Recommended layout:
+  go.mod
+  go.sum
+  cmd/
+    api/main.go
+    worker/main.go
+    cli/main.go
+  internal/
+  pkg/
+  vendor/ (optional)
+
+Notes:
+- This template keeps vendor/ excluded from indexing by default.
+- Commands use Go tooling + optional golangci-lint + git + ripgrep.
+- "run" defaults to running ./cmd/api. Change to your preferred entrypoint.
+- Project commands are static strings; for truly interactive searching (you type a query),
+  use the built-in interactive CLI command and run rg there. The rgsearch/rgvendor
+  entries below are still useful as copy/paste reminders.
+*/
+
+indent_with_tabs = false;
+indent_width = 4;
+default_tab_width = 4;
+indent_clear_blank_lines = false;
+
+patterns = {
+  "*.go",
+  "go.mod",
+  "go.sum",
+
+  "*.md",
+  "*.txt",
+
+  "Makefile",
+  "*.sh",
+  "*.bash",
+  "*.zsh",
+  "*.bat",
+
+  ".env",
+  "*.yaml",
+  "*.yml",
+  "*.json",
+  "*.toml",
+};
+
+blacklist_patterns = {
+  ".*",
+  ".git/*",
+
+  // Keep output directories out of indexing
+  "bin/*",
+  "dist/*",
+  "build/*",
+  "out/*",
+  "tmp/*",
+
+  // Default: do not index vendored deps (use the with-vendor template when needed)
+  "vendor/*",
+};
+
+load_paths = {
+  .win = {
+    { .path = ".", .recursive = true, .relative = true, },
+  },
+  .linux = {
+    { .path = ".", .recursive = true, .relative = true, },
+  },
+  .mac = {
+    { .path = ".", .recursive = true, .relative = true, },
+  },
+};
+
+commands = {
+  // -------------------------
+  // Standard Go workflow
+  // -------------------------
+
+  // build: build all packages (fast sanity check). For producing binaries, see build_bins.
+  .build = {
+    .win   = "echo build & go build ./...",
+    .linux = "echo build && go build ./...",
+    .mac   = "echo build && go build ./...",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  // build_bins: build selected cmd/* binaries into ./bin (edit names to match your repo)
+  .build_bins = {
+    .win =
+      "echo build_bins"
+      " & if not exist bin mkdir bin"
+      " & go build -o bin\\api.exe .\\cmd\\api"
+      " & go build -o bin\\worker.exe .\\cmd\\worker"
+      " & go build -o bin\\cli.exe .\\cmd\\cli",
+    .linux =
+      "echo build_bins"
+      " && mkdir -p bin"
+      " && go build -o bin/api ./cmd/api"
+      " && go build -o bin/worker ./cmd/worker"
+      " && go build -o bin/cli ./cmd/cli",
+    .mac =
+      "echo build_bins"
+      " && mkdir -p bin"
+      " && go build -o bin/api ./cmd/api"
+      " && go build -o bin/worker ./cmd/worker"
+      " && go build -o bin/cli ./cmd/cli",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  // run: default entrypoint (edit to whichever cmd you use most)
+  .run = {
+    .win   = "echo run & go run .\\cmd\\api",
+    .linux = "echo run && go run ./cmd/api",
+    .mac   = "echo run && go run ./cmd/api",
+    .out = "*run*",
+    .footer_panel = false,
+    .save_dirty_files = true,
+    .cursor_at_end = true,
+  },
+
+  .test = {
+    .win   = "echo test & go test ./...",
+    .linux = "echo test && go test ./...",
+    .mac   = "echo test && go test ./...",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  .fmt = {
+    .win   = "echo fmt & gofmt -w .",
+    .linux = "echo fmt && gofmt -w .",
+    .mac   = "echo fmt && gofmt -w .",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  // lint: requires golangci-lint installed in PATH.
+  .lint = {
+    .win   = "echo lint & golangci-lint run",
+    .linux = "echo lint && golangci-lint run",
+    .mac   = "echo lint && golangci-lint run",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  .vet = {
+    .win   = "echo vet & go vet ./...",
+    .linux = "echo vet && go vet ./...",
+    .mac   = "echo vet && go vet ./...",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  // -------------------------
+  // Search helpers (ripgrep)
+  // -------------------------
+  // Interactive usage (recommended): run execute_any_cli and type:
+  //   rg -n --hidden --glob '!**/.git/*' '<pattern>' .
+  //   rg -n '<pattern>' vendor
+  //
+  // These commands are reminders/templates (edit <pattern>):
+  .rgsearch = {
+    .win   = "echo rgsearch: edit command with a pattern & rg -n --hidden --glob \"!**/.git/*\" <pattern> .",
+    .linux = "echo rgsearch: edit command with a pattern && rg -n --hidden --glob '!**/.git/*' <pattern> .",
+    .mac   = "echo rgsearch: edit command with a pattern && rg -n --hidden --glob '!**/.git/*' <pattern> .",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+
+  .rgvendor = {
+    .win   = "echo rgvendor: edit command with a pattern & rg -n <pattern> vendor",
+    .linux = "echo rgvendor: edit command with a pattern && rg -n <pattern> vendor",
+    .mac   = "echo rgvendor: edit command with a pattern && rg -n <pattern> vendor",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+
+  // -------------------------
+  // Git helpers
+  // -------------------------
+
+  .gitstatus = {
+    .win   = "echo gitstatus & git -c color.ui=always status -sb",
+    .linux = "echo gitstatus && git -c color.ui=always status -sb",
+    .mac   = "echo gitstatus && git -c color.ui=always status -sb",
+    .out = "*git*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+
+  // gitblame: needs a file path (and optionally line range). This is a template.
+  // Recommended interactive usage:
+  //   git blame -n -- path/to/file.go
+  //   git blame -L 120,180 path/to/file.go
+  .gitblame = {
+    .win   = "echo gitblame: edit command with a path & git blame -n -- path\\to\\file.go",
+    .linux = "echo gitblame: edit command with a path && git blame -n -- path/to/file.go",
+    .mac   = "echo gitblame: edit command with a path && git blame -n -- path/to/file.go",
+    .out = "*git*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+
+  // gitdiffmain: compare current branch against main.
+  // If your repo uses master, replace main->master.
+  // If you prefer origin/main, replace main->origin/main and keep the fetch.
+  .gitdiffmain = {
+    .win   = "echo gitdiffmain & git fetch --all --prune & git --no-pager diff --stat main...HEAD & git --no-pager diff main...HEAD",
+    .linux = "echo gitdiffmain && git fetch --all --prune && git --no-pager diff --stat main...HEAD && git --no-pager diff main...HEAD",
+    .mac   = "echo gitdiffmain && git fetch --all --prune && git --no-pager diff --stat main...HEAD && git --no-pager diff main...HEAD",
+    .out = "*git-diff*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+};
+
+fkey_command = {
+  // Suggested standardized bindings (edit freely):
+  .F1  = "build",
+  .F2  = "test",
+  .F3  = "vet",
+  .F4  = "run",
+  .F5  = "fmt",
+  .F6  = "lint",
+  .F7  = "rgsearch",
+  .F8  = "gitstatus",
+  .F9  = "gitdiffmain",
+  .F10 = "gitblame",
+};

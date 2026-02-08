@@ -1,0 +1,212 @@
+version(2);
+project_name = "Go Stdlib (GOROOT/src view)";
+
+/*
+Standard library browsing project.
+
+Recommended setup on Linux/macOS:
+
+  mkdir -p ~/go-stdlib-view
+  cd ~/go-stdlib-view
+  ln -s "$(go env GOROOT)/src" src
+  cp /path/to/this/repo/4cc/go-templates/go-stdlib/project.4coder ./project.4coder
+
+Then open 4coder with hot directory set to ~/go-stdlib-view and load this project.
+
+Notes:
+- This is meant for *reading/searching* stdlib source. Editing stdlib under an installed GOROOT is usually not what you want.
+- Git commands only make sense if your stdlib tree is backed by a git checkout (for example:
+  `git clone https://go.googlesource.com/go` and then symlink that repo's `src/` here).
+- Project commands in `project.4coder` are static strings. They cannot prompt you for an interactive query.
+  For interactive ripgrep/git blame targets, use the editor command `execute_any_cli` to type commands.
+*/
+
+indent_with_tabs = false;
+indent_width = 4;
+default_tab_width = 4;
+indent_clear_blank_lines = false;
+
+patterns = {
+  "*.go",
+  "*.s",
+  "*.c",
+  "*.h",
+  "*.md",
+  "*.txt",
+  "LICENSE*",
+  "README*",
+};
+
+blacklist_patterns = {
+  ".*",       // hidden files/dirs
+  ".git/*",
+  // You can optionally exclude huge testdata directories if you want:
+  // "testdata/*",
+};
+
+load_paths = {
+  .linux = {
+    // Symlink: ./src -> $(go env GOROOT)/src
+    { .path = "src", .recursive = true, .relative = true, },
+  },
+  .mac = {
+    { .path = "src", .recursive = true, .relative = true, },
+  },
+  .win = {
+    { .path = "src", .recursive = true, .relative = true, },
+  },
+};
+
+commands = {
+  // -------------------------
+  // Build / run / test / fmt / lint / vet
+  // -------------------------
+
+  // "build": stdlib isn't a single binary, but this is a convenient "compile everything" pass.
+  .build = {
+    .win   = "echo build: use a shell on Windows and run go test -c or go test ./... under src",
+    .linux = "echo build && cd src && go test -c ./...",
+    .mac   = "echo build && cd src && go test -c ./...",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  // "run": not meaningful for stdlib; keep as a placeholder to satisfy standardized command lists.
+  .run = {
+    .win   = "echo run: stdlib has no single runnable entrypoint (use execute_any_cli for ad-hoc commands)",
+    .linux = "echo run: stdlib has no single runnable entrypoint; use execute_any_cli for ad-hoc commands",
+    .mac   = "echo run: stdlib has no single runnable entrypoint; use execute_any_cli for ad-hoc commands",
+    .out = "*run*",
+    .footer_panel = false,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+
+  .test = {
+    .win   = "echo test: use a shell on Windows and run: cd src && go test ./...",
+    .linux = "echo test && cd src && go test ./...",
+    .mac   = "echo test && cd src && go test ./...",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  // Formatting stdlib is usually not desired; this exists for parity with other templates.
+  .fmt = {
+    .win   = "echo fmt: typically do not run gofmt over installed GOROOT; use a git checkout if needed",
+    .linux = "echo fmt: typically do not run gofmt over installed GOROOT; use a git checkout if needed",
+    .mac   = "echo fmt: typically do not run gofmt over installed GOROOT; use a git checkout if needed",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  // Linting stdlib is typically not useful; placeholder for standardized command lists.
+  .lint = {
+    .win   = "echo lint: install golangci-lint and run it manually if needed (not recommended for stdlib)",
+    .linux = "echo lint: install golangci-lint and run manually if needed (not recommended for stdlib)",
+    .mac   = "echo lint: install golangci-lint and run manually if needed (not recommended for stdlib)",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  .vet = {
+    .win   = "echo vet: use a shell on Windows and run: cd src && go vet ./...",
+    .linux = "echo vet && cd src && go vet ./...",
+    .mac   = "echo vet && cd src && go vet ./...",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  // -------------------------
+  // Search (ripgrep)
+  // -------------------------
+  // Project commands are static strings, so they can't prompt you for a query.
+  // These entries are "always present" helpers that either:
+  //  - remind you of the exact rg invocation to run via `execute_any_cli`, or
+  //  - provide a simple PLACEHOLDER you can quickly edit in the project file.
+  //
+  // Recommended interactive usage via `execute_any_cli`:
+  //   rg -n --no-heading --smart-case '<pattern>' src
+  //
+  // If you want true interactive prompting (type query inside 4coder), that requires a small custom C++ command.
+
+  // Guidance-only command (always safe):
+  .rg = {
+    .win   = "echo rg: use execute_any_cli and run: rg -n --no-heading --smart-case '<pattern>' src",
+    .linux = "echo rg && echo \"Use execute_any_cli for interactive rg:\" && echo \"  rg -n --no-heading --smart-case '<pattern>' src\"",
+    .mac   = "echo rg && echo \"Use execute_any_cli for interactive rg:\" && echo \"  rg -n --no-heading --smart-case '<pattern>' src\"",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  // Placeholder command: edit PLACEHOLDER to your query when you want a "one-key repeat".
+  .rg_stdlib = {
+    .win   = "echo rg_stdlib: use execute_any_cli on Windows",
+    .linux = "echo rg_stdlib && rg -n --no-heading --smart-case PLACEHOLDER src",
+    .mac   = "echo rg_stdlib && rg -n --no-heading --smart-case PLACEHOLDER src",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  // -------------------------
+  // Git helpers (only meaningful if src/ is inside a git checkout)
+  // -------------------------
+  .gitstatus = {
+    .win   = "echo gitstatus: only works if src/ is a git checkout; use a shell on Windows",
+    .linux = "echo gitstatus && cd src && git status -sb",
+    .mac   = "echo gitstatus && cd src && git status -sb",
+    .out = "*git*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+
+  // Static placeholder; for real blame you need a file path (and optionally a line range).
+  // Use execute_any_cli, e.g.:
+  //   cd src && git blame -n -- path/to/file.go
+  //   cd src && git blame -L 120,180 path/to/file.go
+  .gitblame = {
+    .win   = "echo gitblame: use execute_any_cli and run: cd src && git blame -L <start>,<end> <file.go>",
+    .linux = "echo gitblame && echo \"Use execute_any_cli for interactive blame:\" && echo \"  cd src && git blame -L <start>,<end> <file.go>\"",
+    .mac   = "echo gitblame && echo \"Use execute_any_cli for interactive blame:\" && echo \"  cd src && git blame -L <start>,<end> <file.go>\"",
+    .out = "*git*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+
+  // Compare against main (or master). This is best-effort:
+  // - If branch main exists: show diff main...HEAD
+  // - Otherwise try master...HEAD
+  .gitdiffmain = {
+    .win   = "echo gitdiffmain: only works if src/ is a git checkout; use a shell on Windows",
+    .linux = "echo gitdiffmain && cd src && git fetch --all --prune && (git --no-pager diff --stat main...HEAD || git --no-pager diff --stat master...HEAD)",
+    .mac   = "echo gitdiffmain && cd src && git fetch --all --prune && (git --no-pager diff --stat main...HEAD || git --no-pager diff --stat master...HEAD)",
+    .out = "*git-diff*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+};
+
+fkey_command = {
+  .F1 = "rg",
+  .F2 = "test",
+  .F3 = "vet",
+  .F7 = "rg_stdlib",
+  .F8 = "gitstatus",
+  .F9 = "gitdiffmain",
+};
