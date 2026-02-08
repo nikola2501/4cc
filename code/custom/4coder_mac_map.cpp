@@ -36,6 +36,13 @@ setup_mac_mapping(Mapping *mapping, i64 global_id, i64 file_id, i64 code_id){
     Bind(quick_swap_buffer,             KeyCode_BackwardSlash, KeyCode_Command);
     Bind(jump_to_last_point,            KeyCode_P, KeyCode_Command);
     Bind(list_all_functions_current_buffer, KeyCode_I, KeyCode_Command, KeyCode_Shift);
+
+    // Interactive ripgrep (vimgrep) searches for jump-to-result navigation.
+    // These commands are defined in 4coder_ripgrep_commands.cpp.
+    Bind(rg_search_repo_prompt,           KeyCode_F, KeyCode_Control);
+    Bind(rg_search_repo_no_vendor_prompt, KeyCode_F, KeyCode_Control, KeyCode_Alt);
+    Bind(rg_search_vendor_prompt,         KeyCode_F, KeyCode_Control, KeyCode_Shift);
+
     Bind(project_fkey_command, KeyCode_F1);
     Bind(project_fkey_command, KeyCode_F2);
     Bind(project_fkey_command, KeyCode_F3);
@@ -148,4 +155,5 @@ setup_mac_mapping(Mapping *mapping, i64 global_id, i64 file_id, i64 code_id){
 }
 
 // BOTTOM
+
 
