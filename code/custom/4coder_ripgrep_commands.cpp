@@ -132,6 +132,62 @@ rg_search_prompt_common(Application_Links *app,
     rg_exec_to_compilation(app, view, prj_dir, cmd);
 }
 
+function String_Const_u8
+rg_word_under_cursor_or_selection(Application_Links *app, Arena *arena){
+    View_ID view = get_active_view(app, Access_Always);
+    Buffer_ID buffer = view_get_buffer(app, view, Access_ReadVisible);
+
+    // Prefer explicit highlighted range (selection) if present, otherwise use the token/word at cursor.
+    Range_i64 range = {};
+    if (view_has_highlighted_range(app, view)){
+        range = get_view_range(app, view);
+    }
+    else{
+        range = Ii64(0, 0);
+    }
+
+    String_Const_u8 result = {};
+    if (range.min != range.max){
+        result = push_buffer_range(app, arena, buffer, range);
+    }
+    else{
+        result = push_token_or_word_under_active_cursor(app, arena);
+    }
+
+    // Trim whitespace just in case.
+    result = string_skip_chop_whitespace(result);
+
+    return result;
+}
+
+function void
+rg_search_repo_literal_common(Application_Links *app, String_Const_u8 pattern){
+    if (pattern.size == 0){
+        return;
+    }
+
+    Scratch_Block scratch(app);
+
+    String8 prj_dir = rg_project_root(app, scratch);
+    if (prj_dir.size == 0){
+        print_message(app, string_u8_litexpr("ripgrep: no project loaded (load a project.4coder first)\n"));
+        return;
+    }
+
+    String_Const_u8 quoted = rg_quote_for_shell(scratch, pattern);
+
+    // -F => literal search (no regex)
+    // --vimgrep => file:line:col:match (jumpable)
+    String_Const_u8 cmd = push_u8_stringf(
+        scratch,
+        "rg --vimgrep -F --smart-case -n --hidden --glob \"!**/.git/*\" %.*s .",
+        string_expand(quoted)
+    );
+
+    View_ID view = get_active_view(app, Access_Always);
+    rg_exec_to_compilation(app, view, prj_dir, cmd);
+}
+
 // ------------------------------
 // Commands
 
@@ -154,6 +210,14 @@ CUSTOM_DOC("Prompt for a pattern and run `rg --vimgrep` in vendor/. Output goes 
 {
     rg_search_prompt_common(app, string_u8_litexpr("rg (vendor) pattern: "),
                             string_u8_litexpr("vendor"), false);
+}
+
+CUSTOM_COMMAND_SIG(rg_search_repo_literal_word_under_cursor)
+CUSTOM_DOC("Run `rg --vimgrep -F` in the project root (includes vendor) using the word/token under the cursor (selection preferred). Output goes to *compilation* for jump navigation.")
+{
+    Scratch_Block scratch(app);
+    String_Const_u8 pattern = rg_word_under_cursor_or_selection(app, scratch);
+    rg_search_repo_literal_common(app, pattern);
 }
 
 #endif // FCODER_RIPGREP_COMMANDS_CPP

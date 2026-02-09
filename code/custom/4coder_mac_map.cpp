@@ -42,6 +42,7 @@ setup_mac_mapping(Mapping *mapping, i64 global_id, i64 file_id, i64 code_id){
     Bind(rg_search_repo_prompt,           KeyCode_F, KeyCode_Control);
     Bind(rg_search_repo_no_vendor_prompt, KeyCode_F, KeyCode_Control, KeyCode_Alt);
     Bind(rg_search_vendor_prompt,         KeyCode_F, KeyCode_Control, KeyCode_Shift);
+    Bind(rg_search_repo_literal_word_under_cursor, KeyCode_W, KeyCode_Control, KeyCode_Alt);
 
     Bind(project_fkey_command, KeyCode_F1);
     Bind(project_fkey_command, KeyCode_F2);
