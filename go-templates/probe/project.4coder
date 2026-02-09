@@ -1,0 +1,224 @@
+version(2);
+project_name = "Go Template (single main, WITH vendor indexed)";
+
+// Intended for a single-module Go repo where `go run .` works (main at repo root).
+// This variant INDEXES vendor/ (heavier). Use it in a separate 4coder window when you need it.
+
+indent_with_tabs = false;
+indent_width = 4;
+default_tab_width = 4;
+indent_clear_blank_lines = false;
+
+patterns = {
+  "*.go",
+  "go.mod",
+  "go.sum",
+
+  "*.md",
+  "*.txt",
+
+  "Makefile",
+  "*.sh",
+  "*.bash",
+  "*.zsh",
+  "*.bat",
+
+  ".env",
+  "*.yaml",
+  "*.yml",
+  "*.json",
+  "*.toml",
+
+  "README*",
+  "LICENSE*",
+};
+
+// NOTE: vendor is NOT blacklisted here (so it will be indexed).
+blacklist_patterns = {
+  ".*",
+  ".git/*",
+
+  // Keep typical build output out of indexing
+  "bin/*",
+  "build/*",
+  "dist/*",
+  "out/*",
+  "tmp/*",
+};
+
+load_paths = {
+  .win = {
+    { .path = ".", .recursive = true, .relative = true, },
+  },
+  .linux = {
+    { .path = ".", .recursive = true, .relative = true, },
+  },
+  .mac = {
+    { .path = ".", .recursive = true, .relative = true, },
+  },
+};
+
+commands = {
+  // ----------------------------
+  // Go workflow
+  // ----------------------------
+
+  .build = {
+    .win   = "echo build & if not exist bin mkdir bin & go build -o bin\\app.exe .",
+    .linux = "echo build && mkdir -p bin && go build -o bin/app .",
+    .mac   = "echo build && mkdir -p bin && go build -o bin/app .",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  .run = {
+    .win   = "echo run & go run .",
+    .linux = "echo run && go run .",
+    .mac   = "echo run && go run .",
+    .out = "*run*",
+    .footer_panel = false,
+    .save_dirty_files = true,
+    .cursor_at_end = true,
+  },
+
+  .test = {
+    .win   = "echo test & go test ./...",
+    .linux = "echo test && go test ./...",
+    .mac   = "echo test && go test ./...",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  .fmt = {
+    .win   = "echo fmt & gofmt -w .",
+    .linux = "echo fmt && gofmt -w .",
+    .mac   = "echo fmt && gofmt -w .",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  // Requires: golangci-lint in PATH (https://golangci-lint.run/)
+  .lint = {
+    .win   = "echo lint & golangci-lint run",
+    .linux = "echo lint && golangci-lint run",
+    .mac   = "echo lint && golangci-lint run",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  .vet = {
+    .win   = "echo vet & go vet ./...",
+    .linux = "echo vet && go vet ./...",
+    .mac   = "echo vet && go vet ./...",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = true,
+    .cursor_at_end = false,
+  },
+
+  // ----------------------------
+  // Search (ripgrep)
+  // ----------------------------
+  // Project commands are static strings; they cannot prompt for a query.
+  // For *interactive* search, use 4coder's `execute_any_cli` and type:
+  //   rg -n --hidden --glob '!**/.git/*' '<pattern>' .
+  //
+  // These two entries provide common forms. Edit the pattern as needed.
+  .rg_repo = {
+    .win   = "echo rg_repo & rg -n --hidden --glob \"!**/.git/*\" PATTERN .",
+    .linux = "echo rg_repo && rg -n --hidden --glob '!**/.git/*' PATTERN .",
+    .mac   = "echo rg_repo && rg -n --hidden --glob '!**/.git/*' PATTERN .",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  .rg_vendor = {
+    .win   = "echo rg_vendor & rg -n PATTERN vendor",
+    .linux = "echo rg_vendor && rg -n PATTERN vendor",
+    .mac   = "echo rg_vendor && rg -n PATTERN vendor",
+    .out = "*compilation*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  // ----------------------------
+  // Git helpers
+  // ----------------------------
+  // Notes:
+  // - git status/diff are straightforward.
+  // - git blame usually needs a file path (and optionally a line range).
+  //   Without a custom 4coder command, this project file can't automatically
+  //   use "current buffer file", so we provide a helpful placeholder.
+
+  .git_status = {
+    .win   = "echo git_status & git -c color.ui=always status -sb",
+    .linux = "echo git_status && git -c color.ui=always status -sb",
+    .mac   = "echo git_status && git -c color.ui=always status -sb",
+    .out = "*git*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+
+  // Compare current branch with main. Uses origin/main as the baseline.
+  // If your repo uses master, change origin/main -> origin/master.
+  .git_diff_main = {
+    .win   = "echo git_diff_main & git fetch --all --prune & git --no-pager diff --stat origin/main...HEAD",
+    .linux = "echo git_diff_main && git fetch --all --prune && git --no-pager diff --stat origin/main...HEAD",
+    .mac   = "echo git_diff_main && git fetch --all --prune && git --no-pager diff --stat origin/main...HEAD",
+    .out = "*git-diff*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  .git_diff_main_full = {
+    .win   = "echo git_diff_main_full & git fetch --all --prune & git --no-pager diff origin/main...HEAD",
+    .linux = "echo git_diff_main_full && git fetch --all --prune && git --no-pager diff origin/main...HEAD",
+    .mac   = "echo git_diff_main_full && git fetch --all --prune && git --no-pager diff origin/main...HEAD",
+    .out = "*git-diff*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = false,
+  },
+
+  .git_blame = {
+    .win   = "echo git_blame & echo Run via interactive CLI (recommended): git blame -n -- path/to/file.go",
+    .linux = "echo git_blame && echo \"Run via interactive CLI (recommended): git blame -n -- path/to/file.go\"",
+    .mac   = "echo git_blame && echo \"Run via interactive CLI (recommended): git blame -n -- path/to/file.go\"",
+    .out = "*git*",
+    .footer_panel = true,
+    .save_dirty_files = false,
+    .cursor_at_end = true,
+  },
+};
+
+fkey_command = {
+  // Standardized Go actions
+  .F1 = "build",
+  .F2 = "test",
+  .F7 = "run",
+  .F5 = "fmt",
+  .F6 = "lint",
+
+
+  // Search
+  .F8  = "rg_repo",
+  .F9  = "rg_vendor",
+
+  // Git helpers
+  .F10 = "git_status",
+  .F11 = "git_diff_main",
+  .F12 = "git_blame",
+};

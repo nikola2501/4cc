@@ -286,6 +286,7 @@ default_render_buffer(Application_Links *app, View_ID view_id, Face_ID face_id,
     if (token_array.tokens != 0){
         draw_cpp_token_colors(app, text_layout_id, &token_array);
         
+
         // NOTE(allen): Scan for TODOs and NOTEs
         b32 use_comment_keyword = def_get_config_b32(vars_save_string_lit("use_comment_keyword"));
         if (use_comment_keyword){
@@ -737,73 +738,80 @@ BUFFER_HOOK_SIG(default_begin_buffer){
     b32 treat_as_code = false;
     String_Const_u8 file_name = push_buffer_file_name(app, scratch, buffer_id);
     if (file_name.size > 0){
-        String_Const_u8 treat_as_code_string = def_get_config_string(scratch, vars_save_string_lit("treat_as_code"));
-        String_Const_u8_Array extensions = parse_extension_line_to_extension_list(app, scratch, treat_as_code_string);
         String_Const_u8 ext = string_file_extension(file_name);
-        for (i32 i = 0; i < extensions.count; ++i){
-            if (string_match(ext, extensions.strings[i])){
-                
-                if (string_match(ext, string_u8_litexpr("cpp")) ||
-                    string_match(ext, string_u8_litexpr("h")) ||
-                    string_match(ext, string_u8_litexpr("c")) ||
-                    string_match(ext, string_u8_litexpr("hpp")) ||
-                    string_match(ext, string_u8_litexpr("cc"))){
-                    treat_as_code = true;
-                }
-                
+        
+        // NOTE(4cc): Always treat *.go as code so the lexer runs, without changing rendering.
+        if (string_match(ext, string_u8_litexpr("go"))){
+            treat_as_code = true;
+        }
+        else{
+            String_Const_u8 treat_as_code_string = def_get_config_string(scratch, vars_save_string_lit("treat_as_code"));
+            String_Const_u8_Array extensions = parse_extension_line_to_extension_list(app, scratch, treat_as_code_string);
+            for (i32 i = 0; i < extensions.count; ++i){
+                if (string_match(ext, extensions.strings[i])){
+                    
+                    if (string_match(ext, string_u8_litexpr("cpp")) ||
+                        string_match(ext, string_u8_litexpr("h")) ||
+                        string_match(ext, string_u8_litexpr("c")) ||
+                        string_match(ext, string_u8_litexpr("hpp")) ||
+                        string_match(ext, string_u8_litexpr("cc"))){
+                        treat_as_code = true;
+                    }
+                    
 #if 0
-                treat_as_code = true;
-                
-                if (string_match(ext, string_u8_litexpr("cs"))){
-                    if (parse_context_language_cs == 0){
-                        init_language_cs(app);
+                    treat_as_code = true;
+                    
+                    if (string_match(ext, string_u8_litexpr("cs"))){
+                        if (parse_context_language_cs == 0){
+                            init_language_cs(app);
+                        }
+                        parse_context_id = parse_context_language_cs;
                     }
-                    parse_context_id = parse_context_language_cs;
-                }
-                
-                if (string_match(ext, string_u8_litexpr("java"))){
-                    if (parse_context_language_java == 0){
-                        init_language_java(app);
+                    
+                    if (string_match(ext, string_u8_litexpr("java"))){
+                        if (parse_context_language_java == 0){
+                            init_language_java(app);
+                        }
+                        parse_context_id = parse_context_language_java;
                     }
-                    parse_context_id = parse_context_language_java;
-                }
-                
-                if (string_match(ext, string_u8_litexpr("rs"))){
-                    if (parse_context_language_rust == 0){
-                        init_language_rust(app);
+                    
+                    if (string_match(ext, string_u8_litexpr("rs"))){
+                        if (parse_context_language_rust == 0){
+                            init_language_rust(app);
+                        }
+                        parse_context_id = parse_context_language_rust;
                     }
-                    parse_context_id = parse_context_language_rust;
-                }
-                
-                if (string_match(ext, string_u8_litexpr("cpp")) ||
-                    string_match(ext, string_u8_litexpr("h")) ||
-                    string_match(ext, string_u8_litexpr("c")) ||
-                    string_match(ext, string_u8_litexpr("hpp")) ||
-                    string_match(ext, string_u8_litexpr("cc"))){
-                    if (parse_context_language_cpp == 0){
-                        init_language_cpp(app);
+                    
+                    if (string_match(ext, string_u8_litexpr("cpp")) ||
+                        string_match(ext, string_u8_litexpr("h")) ||
+                        string_match(ext, string_u8_litexpr("c")) ||
+                        string_match(ext, string_u8_litexpr("hpp")) ||
+                        string_match(ext, string_u8_litexpr("cc"))){
+                        if (parse_context_language_cpp == 0){
+                            init_language_cpp(app);
+                        }
+                        parse_context_id = parse_context_language_cpp;
                     }
-                    parse_context_id = parse_context_language_cpp;
-                }
-                
-                // TODO(NAME): Real GLSL highlighting
-                if (string_match(ext, string_u8_litexpr("glsl"))){
-                    if (parse_context_language_cpp == 0){
-                        init_language_cpp(app);
+                    
+                    // TODO(NAME): Real GLSL highlighting
+                    if (string_match(ext, string_u8_litexpr("glsl"))){
+                        if (parse_context_language_cpp == 0){
+                            init_language_cpp(app);
+                        }
+                        parse_context_id = parse_context_language_cpp;
                     }
-                    parse_context_id = parse_context_language_cpp;
-                }
-                
-                // TODO(NAME): Real Objective-C highlighting
-                if (string_match(ext, string_u8_litexpr("m"))){
-                    if (parse_context_language_cpp == 0){
-                        init_language_cpp(app);
+                    
+                    // TODO(NAME): Real Objective-C highlighting
+                    if (string_match(ext, string_u8_litexpr("m"))){
+                        if (parse_context_language_cpp == 0){
+                            init_language_cpp(app);
+                        }
+                        parse_context_id = parse_context_language_cpp;
                     }
-                    parse_context_id = parse_context_language_cpp;
-                }
 #endif
-                
-                break;
+                    
+                    break;
+                }
             }
         }
     }
