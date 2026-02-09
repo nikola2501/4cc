@@ -1,5 +1,6 @@
 
 keys_global = {
+    { "rg_search_repo_literal_word_under_cursor", "W", "Control", "Shift" },
     { "keyboard_macro_start_recording",  "U", "Command" },
     { "keyboard_macro_finish_recording", "U", "Command", "Shift" },
     { "keyboard_macro_replay",           "U", "Control" },
