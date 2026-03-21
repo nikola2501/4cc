@@ -341,6 +341,56 @@ return(result);
 }
 
 function void
+go_parse_type_structure(Code_Index_File *index, Generic_Parse_State *state, Code_Index_Nest *parent){
+generic_parse_inc(state);
+generic_parse_skip_soft_tokens(index, state);
+if (state->finished){
+return;
+}
+Token *token = token_it_read(&state->it);
+if (token != 0 && token->kind == TokenBaseKind_Identifier){
+index_new_note(index, state, Ii64(token), CodeIndexNote_Type, parent);
+generic_parse_inc(state);
+}
+}
+
+function void
+go_parse_function(Code_Index_File *index, Generic_Parse_State *state, Code_Index_Nest *parent){
+generic_parse_inc(state);
+generic_parse_skip_soft_tokens(index, state);
+if (state->finished){
+return;
+}
+Token *token = token_it_read(&state->it);
+if (token != 0 && token->kind == TokenBaseKind_ParentheticalOpen) {
+i32 paren_nest_level = 0;
+for (; token != 0;) {
+if (token->kind == TokenBaseKind_ParentheticalOpen) {
+paren_nest_level += 1;
+}
+else if (token->kind == TokenBaseKind_ParentheticalClose) {
+paren_nest_level -= 1;
+if (paren_nest_level == 0) {
+generic_parse_inc(state);
+break;
+}
+}
+generic_parse_inc(state);
+generic_parse_skip_soft_tokens(index, state);
+token = token_it_read(&state->it);
+if (state->finished) break;
+}
+generic_parse_skip_soft_tokens(index, state);
+token = token_it_read(&state->it);
+}
+
+if (token != 0 && token->kind == TokenBaseKind_Identifier){
+index_new_note(index, state, Ii64(token), CodeIndexNote_Function, parent);
+generic_parse_inc(state);
+}
+}
+
+function void
 cpp_parse_type_structure(Code_Index_File *index, Generic_Parse_State *state, Code_Index_Nest *parent){
 generic_parse_inc(state);
 generic_parse_skip_soft_tokens(index, state);
@@ -772,6 +822,23 @@ code_index_push_nest(&index->nest_list, nest);
 else if (token->kind == TokenBaseKind_ParentheticalOpen){
 Code_Index_Nest *nest = generic_parse_paren(index, state);
 code_index_push_nest(&index->nest_list, nest);
+}
+else if (state->do_go_parse){
+if (token->kind == TokenBaseKind_Identifier){
+String_Const_u8 lexeme = string_substring(state->contents, Ii64(token));
+if (string_match(lexeme, string_u8_litexpr("func"))){
+go_parse_function(index, state, 0);
+}
+else if (string_match(lexeme, string_u8_litexpr("type"))){
+go_parse_type_structure(index, state, 0);
+}
+else{
+generic_parse_inc(state);
+}
+}
+else{
+generic_parse_inc(state);
+}
 }
 else if (state->do_cpp_parse){
 if (token->sub_kind == TokenCppKind_Struct ||

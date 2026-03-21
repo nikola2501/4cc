@@ -138,10 +138,16 @@ code_index_update_tick(Application_Links *app){
         
         Generic_Parse_State state = {};
         generic_parse_init(app, &arena, contents, &tokens, &state);
-        // TODO(allen): Actually determine this in a fair way.
-        // Maybe switch to an enum?
-        // Actually probably a pointer to a struct that defines the language.
-        state.do_cpp_parse = true;
+        
+        String_Const_u8 ext = string_file_extension(push_buffer_file_name(app, scratch, buffer_id));
+        if (string_match(ext, string_u8_litexpr("go"))){
+            state.do_go_parse = true;
+        } else {
+            // TODO(allen): Actually determine this in a fair way.
+            // Maybe switch to an enum?
+            // Actually probably a pointer to a struct that defines the language.
+            state.do_cpp_parse = true;
+        }
         generic_parse_full_input_breaks(index, &state, max_i32);
         
         code_index_lock();
@@ -642,6 +648,14 @@ parse_async__inner(Async_Context *actx, Buffer_ID buffer_id,
     
     Generic_Parse_State state = {};
     generic_parse_init(app, &arena, contents, tokens, &state);
+    
+    Scratch_Block scratch(app);
+    String_Const_u8 ext = string_file_extension(push_buffer_file_name(app, scratch, buffer_id));
+    if (string_match(ext, string_u8_litexpr("go"))){
+        state.do_go_parse = true;
+    } else {
+        state.do_cpp_parse = true;
+    }
     
     b32 canceled = false;
     

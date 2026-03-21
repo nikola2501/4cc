@@ -119,6 +119,7 @@ struct Generic_Parse_State{
     b32 in_statement;
     
     b32 do_cpp_parse;
+    b32 do_go_parse;
 };
 
 #endif
